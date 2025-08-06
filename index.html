@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Order System</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    .menu, .orders { margin-top: 30px; }
+    button { margin-top: 10px; padding: 8px 12px; }
+    input, select { padding: 5px; margin: 5px 0; width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .paid { background-color: #c7ffd6; }
+    #promptPayBox {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 15px;
+      margin-top: 10px;
+      display: none;
+    }
+    .actions { margin-top: 20px; text-align: right; }
+    #ownerLogin { margin-top: 20px; text-align: right; }
+  </style>
+</head>
+<body>
+
+  <h1>Food Order System</h1>
+
+  <div class="menu">
+    <h2>📋 Menu</h2>
+    <form id="orderForm">
+      <label>Your Name:</label>
+      <input type="text" id="customerName" required />
+
+      <label>Select Menu:</label>
+      <select id="menuItem" required>
+        <option value="Grilled Chicken Noodles">Grilled Chicken Noodles</option>
+        <option value="Grilled Chicken Noodles with Egg">Grilled Chicken Noodles with Egg</option>
+        <option value="Khao Soi">Khao Soi</option>
+        <option value="Khao Soi with Egg">Khao Soi with Egg</option>
+      </select>
+
+      <button type="submit">Place Order</button>
+    </form>
+  </div>
+
+  <div class="orders">
+    <h2>📦 Orders</h2>
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Menu</th>
+          <th>Status</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+
+    <div id="ownerLogin">
+      <button onclick="ownerLogin()">🔑 Login as owner</button>
+    </div>
+
+    <div class="actions" id="clearOrdersSection" style="display: none;">
+      <button onclick="clearOrders()">🗑️ Clear All Orders</button>
+    </div>
+
+    <div id="promptPayBox">
+      <strong>💸 PromptPay:</strong><br>
+      <span>083-920-2547</span>
+    </div>
+  </div>
+
+  <script>
+    const OWNER_PASSWORD = "2069"; // ✅ รหัส PIN เจ้าของร้าน
+
+    const form = document.getElementById('orderForm');
+    const nameInput = document.getElementById('customerName');
+    const menuSelect = document.getElementById('menuItem');
+    const ordersBody = document.getElementById('ordersBody');
+    const promptPayBox = document.getElementById('promptPayBox');
+    const clearOrdersSection = document.getElementById('clearOrdersSection');
+
+    let orders = [];
+
+    if (localStorage.getItem('orders')) {
+      try {
+        orders = JSON.parse(localStorage.getItem('orders')) || [];
+      } catch (err) {
+        orders = [];
+        localStorage.removeItem('orders');
+      }
+    }
+
+    function saveOrders() {
+      localStorage.setItem('orders', JSON.stringify(orders));
+    }
+
+    function renderOrders() {
+      ordersBody.innerHTML = '';
+      orders.forEach((order, index) => {
+        const row = document.createElement('tr');
+        if (order.paid) row.classList.add('paid');
+
+        row.innerHTML = `
+          <td>${order.name}</td>
+          <td>${order.menu}</td>
+          <td>${order.paid ? '✅ Paid' : '❌ Unpaid'}</td>
+          <td><button onclick="togglePaid(${index})">${order.paid ? 'Undo' : 'Pay'}</button></td>
+        `;
+        ordersBody.appendChild(row);
+      });
+    }
+
+    function togglePaid(index) {
+      orders[index].paid = !orders[index].paid;
+      saveOrders();
+      renderOrders();
+      promptPayBox.style.display = orders[index].paid ? 'block' : 'none';
+    }
+
+    function clearOrders() {
+      if (confirm('Are you sure you want to clear all orders?')) {
+        orders = [];
+        localStorage.removeItem('orders');
+        renderOrders();
+        promptPayBox.style.display = 'none';
+      }
+    }
+
+    function ownerLogin() {
+      const input = prompt("Enter owner PIN:");
+      if (input === OWNER_PASSWORD) {
+        alert("Logged in as owner.");
+        clearOrdersSection.style.display = "block";
+      } else {
+        alert("Incorrect PIN.");
+      }
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const menu = menuSelect.value;
+
+      if (!name) {
+        alert('Please enter your name.');
+        return;
+      }
+
+      const newOrder = {
+        name: name,
+        menu: menu,
+        paid: false
+      };
+
+      orders.push(newOrder);
+      saveOrders();
+      renderOrders();
+      form.reset();
+    });
+
+    renderOrders();
+  </script>
+</body>
+</html>
